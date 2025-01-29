@@ -15,7 +15,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
-          tabBarLabel: "Home",
         }}
       />
       <Tabs.Screen
@@ -26,15 +25,12 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
-          tabBarLabel: "Profile",
         }}
       />
       <Tabs.Screen
         name="members"
         options={{
-          title: "Manage Members",
-          headerShown: true,
-          href: null, // This hides it from the tab bar
+          href: null,
         }}
       />
     </Tabs>

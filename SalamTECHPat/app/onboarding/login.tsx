@@ -16,15 +16,19 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       setUserType('registered');
-      router.replace("/tabs/home");
+      router.replace("/home/home");
     } catch (error: any) {
       Alert.alert("Login Error", error.message);
     }
   };
+  
+  const handleRegister = async () => {
+    router.push("/onboarding/register");
+  };
 
   const handleGuestLogin = () => {
     setUserType('guest');
-    router.replace("/tabs/home");
+    router.replace("/home/home");
   };
 
   return (
@@ -69,7 +73,7 @@ export default function Login() {
 
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>Don't have an account? </Text>
-        <Pressable onPress={() => router.push("/onboarding/register")}>
+        <Pressable onPress={handleRegister}>
           <Text style={styles.registerLink}>Register</Text>
         </Pressable>
       </View>

@@ -17,7 +17,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.SalamTECH"
+      "package": "com.anonymous.SalamTECH",
+      "permissions": [
+        "android.permission.NFC"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -35,7 +38,9 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "react-native-nfc-manager",
+      "expo-barcode-scanner"
     ],
     "experiments": {
       "typedRoutes": true
@@ -43,6 +48,15 @@
     "assetBundlePatterns": [
       "**/*",
       "assets/*"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "6f407f0f-56d8-4151-8095-bfe5657fde3e"
+      }
+    },
+    "owner": "fatimaahmed02"
   }
 }

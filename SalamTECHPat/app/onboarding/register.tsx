@@ -85,9 +85,6 @@ export default function Register() {
 
       setUserType('registered');
       router.replace("/home/home");
-      
-
-      
 
     } catch (error: any) {
       console.log("Detailed error:", error);
@@ -116,17 +113,6 @@ export default function Register() {
           value={lastName}
           onChangeText={setLastName}
           autoCapitalize="words"
-        />
-
-        <RequiredLabel text="Email" />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your email address"
-          placeholderTextColor="#999999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
         />
 
 <Text style={styles.label}>Date of Birth</Text>
@@ -178,6 +164,17 @@ export default function Register() {
           onChangeText={setPhone}
           keyboardType="numeric"
           returnKeyType="next"
+        />
+
+        <RequiredLabel text="Email" />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your email address"
+          placeholderTextColor="#999999"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
 
         <RequiredLabel text="Password" />

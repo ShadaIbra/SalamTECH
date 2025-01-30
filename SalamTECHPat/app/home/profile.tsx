@@ -1,15 +1,16 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Alert, TextInput } from "react-native";
 import { router, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useUser } from '../utils/userContext';
 import { useState, useEffect } from "react";
 import { getAuth } from 'firebase/auth';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
 
 export default function Profile() {
   const { userType } = useUser();
   const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState<any>(null);
   const isGuest = userType === 'guest';
 
   useEffect(() => {
@@ -39,11 +40,44 @@ export default function Profile() {
           }
         }
       }
-      setLoading(false);
     };
 
     fetchUserData();
   }, [userType]);
+
+  useEffect(() => {
+    // Initialize editedData when userData is loaded
+    if (userData) {
+      setEditedData({ ...userData });
+    }
+  }, [userData]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditedData({ ...userData });
+  };
+
+  const handleSave = async () => {
+    try {
+      const auth = getAuth();
+      const db = getFirestore();
+      
+      if (auth.currentUser) {
+        await setDoc(doc(db, "users", auth.currentUser.uid), editedData, { merge: true });
+        setUserData(editedData);
+        setIsEditing(false);
+        Alert.alert("Success", "Profile updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      Alert.alert("Error", "Failed to update profile");
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedData({ ...userData });
+  };
 
   if (isGuest) {
     return (
@@ -78,62 +112,153 @@ export default function Profile() {
           <Ionicons name="person" size={60} color="#ccc" />
         </View>
         <Text style={styles.name}>
-          {loading ? <ActivityIndicator size="small" color="#007AFF" /> : `${userData?.firstName || ''} ${userData?.lastName || ''}`}
+          {`${userData?.firstName || ''} ${userData?.lastName || ''}`}
         </Text>
         <Text style={styles.email}>
-          {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.email || ''}
+          {userData?.email || ''}
         </Text>
+        {!isEditing ? (
+          <Pressable style={styles.editButton} onPress={handleEdit}>
+            <Ionicons name="create-outline" size={20} color="#007AFF" />
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.editActions}>
+            <Pressable style={styles.actionButton} onPress={handleCancel}>
+              <Text style={[styles.actionButtonText, { color: '#FF3B30' }]}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.actionButton} onPress={handleSave}>
+              <Text style={[styles.actionButtonText, { color: '#007AFF' }]}>Save</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Personal Information</Text>
+        
         <View style={styles.infoItem}>
-          <Text style={styles.label}>Full Name</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : `${userData?.firstName || ''} ${userData?.lastName || ''}`}
-          </Text>
+          <Text style={styles.label}>First Name</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.firstName}
+              onChangeText={(text) => setEditedData({ ...editedData, firstName: text })}
+              placeholder="Enter first name"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.firstName || ''}</Text>
+          )}
         </View>
+
+        <View style={styles.infoItem}>
+          <Text style={styles.label}>Last Name</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.lastName}
+              onChangeText={(text) => setEditedData({ ...editedData, lastName: text })}
+              placeholder="Enter last name"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.lastName || ''}</Text>
+          )}
+        </View>
+
         <View style={styles.infoItem}>
           <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.email || ''}
-          </Text>
+          <Text style={styles.value}>{userData?.email || ''}</Text>
         </View>
+
         <View style={styles.infoItem}>
           <Text style={styles.label}>Phone</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.phone || ''}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.phone}
+              onChangeText={(text) => setEditedData({ ...editedData, phone: text })}
+              placeholder="Enter phone number"
+              keyboardType="phone-pad"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.phone || ''}</Text>
+          )}
         </View>
+
         <View style={styles.infoItem}>
           <Text style={styles.label}>Date of Birth</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.dateOfBirth || ''}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.dateOfBirth}
+              onChangeText={(text) => setEditedData({ ...editedData, dateOfBirth: text })}
+              placeholder="YYYY/MM/DD"
+              keyboardType="phone-pad"
+              placeholderTextColor="#999999"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.dateOfBirth || ''}</Text>
+          )}
         </View>
+
         <View style={styles.infoItem}>
           <Text style={styles.label}>Gender</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.gender || ''}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.gender}
+              onChangeText={(text) => setEditedData({ ...editedData, gender: text })}
+              placeholder="Enter gender"
+              placeholderTextColor="#999999"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.gender || ''}</Text>
+          )}
         </View>
+
         <View style={styles.infoItem}>
           <Text style={styles.label}>Nationality</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.nationality || ''}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.nationality}
+              onChangeText={(text) => setEditedData({ ...editedData, nationality: text })}
+              placeholder="Enter nationality"
+              placeholderTextColor="#999999"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.nationality || ''}</Text>
+          )}
         </View>
+
         <View style={styles.infoItem}>
           <Text style={styles.label}>ID Number</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.idNumber || ''}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.idNumber}
+              onChangeText={(text) => setEditedData({ ...editedData, idNumber: text })}
+              placeholder="Enter ID number"
+              placeholderTextColor="#999999"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.idNumber || ''}</Text>
+          )}
         </View>
+
         <View style={styles.infoItem}>
           <Text style={styles.label}>Blood Type</Text>
-          <Text style={styles.value}>
-            {loading ? <ActivityIndicator size="small" color="#007AFF" /> : userData?.bloodType || ''}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={editedData?.bloodType}
+              onChangeText={(text) => setEditedData({ ...editedData, bloodType: text })}
+              placeholder="Enter blood type"
+              placeholderTextColor="#999999"
+            />
+          ) : (
+            <Text style={styles.value}>{userData?.bloodType || ''}</Text>
+          )}
         </View>
       </View>
 
@@ -146,7 +271,7 @@ export default function Profile() {
           </Pressable>
         </Link>
 
-        <Pressable style={styles.menuItem} onPress={() => router.push("/home/settings")}>
+        <Pressable style={styles.menuItem} onPress={() => router.push("/settings")}>
           <Ionicons name="settings" size={24} color="#007AFF" />
           <Text style={styles.menuItemText}>Settings</Text>
           <Ionicons name="chevron-forward" size={24} color="#666" />
@@ -285,5 +410,36 @@ const styles = StyleSheet.create({
   },
   registerButtonText: {
     color: "#007AFF",
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    padding: 8,
+  },
+  editButtonText: {
+    color: '#007AFF',
+    marginLeft: 5,
+    fontSize: 16,
+  },
+  editActions: {
+    flexDirection: 'row',
+    marginTop: 10,
+    gap: 20,
+  },
+  actionButton: {
+    padding: 8,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  input: {
+    flex: 1,
+    marginLeft: 10,
+    padding: 0,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'right',
   },
 }); 

@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from 'react-native-maps';
 import { useState, useEffect } from "react";
@@ -24,41 +24,33 @@ interface MemberData {
   };
 }
 
-export default function MemberDetails() {
+export default function MemberDetail() {
   const { id } = useLocalSearchParams();
   const [member, setMember] = useState<MemberData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMemberDetails = async () => {
-      try {
-        const auth = getAuth();
-        const db = getFirestore();
-        
-        if (!auth.currentUser) {
-          throw new Error('User not authenticated');
+    const fetchMember = async () => {
+      const auth = getAuth();
+      const db = getFirestore();
+      
+      if (auth.currentUser && id) {
+        try {
+          const memberDoc = await getDoc(doc(db, `users/${auth.currentUser.uid}/members/${id}`));
+          if (memberDoc.exists()) {
+            setMember({ id: memberDoc.id, ...memberDoc.data() as Omit<MemberData, 'id'> });
+          } else {
+            throw new Error("Member not found");
+          }
+        } catch (error) {
+          console.error("Error fetching member details:", error);
+          router.back();
         }
-
-        const memberDoc = await getDoc(doc(db, `users/${auth.currentUser.uid}/members/${id}`));
-        
-        if (!memberDoc.exists()) {
-          throw new Error('Member not found');
-        }
-
-        setMember({
-          id: memberDoc.id,
-          ...memberDoc.data() as Omit<MemberData, 'id'>
-        });
-      } catch (err) {
-        console.error('Error fetching member details:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load member details');
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchMemberDetails();
+    fetchMember();
   }, [id]);
 
   if (loading) {
@@ -79,11 +71,18 @@ export default function MemberDetails() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <View style={styles.profilePicture}>
-            <Ionicons name="person" size={60} color="#ccc" />
-          </View>
+      <View style={styles.header}>
+        <Pressable 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#007AFF" />
+        </Pressable>
+        <Text style={styles.headerTitle}>Member Details</Text>
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.infoCard}>
           <Text style={styles.name}>{member.name}</Text>
           <Text style={styles.relation}>{member.relation}</Text>
         </View>
@@ -175,7 +174,7 @@ export default function MemberDetails() {
             </View>
           </View>
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -185,33 +184,49 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
-  scrollView: {
-    flex: 1,
-  },
   header: {
     backgroundColor: "white",
-    alignItems: "center",
-    paddingVertical: 30,
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
-  },
-  profilePicture: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+  },
+  backButton: {
+    marginRight: 10,
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#333",
+  },
+  content: {
+    padding: 20,
+  },
+  infoCard: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   name: {
     fontSize: 24,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   relation: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#666",
   },
   section: {

@@ -1,8 +1,9 @@
-import { Tabs } from "expo-router";
+import { Tabs, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function TabsLayout() {
   return (
+  
     <Tabs screenOptions={{
       tabBarActiveTintColor: "#007AFF",
       tabBarInactiveTintColor: "#666",
@@ -27,12 +28,8 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="members"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
+    
   );
 } 
+

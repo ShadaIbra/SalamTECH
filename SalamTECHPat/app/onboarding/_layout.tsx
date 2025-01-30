@@ -18,5 +18,6 @@ export default function OnboardingLayout() {
         }} 
       />
     </Stack>
+    
   );
 } 

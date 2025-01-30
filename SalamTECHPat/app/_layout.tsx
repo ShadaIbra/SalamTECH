@@ -1,5 +1,8 @@
 import { Stack } from "expo-router";
-import { UserProvider } from '../app/utils/userContext';
+import { UserProvider } from './utils/userContext';
+import { Pressable } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 export default function RootLayout() {
   return (
@@ -7,7 +10,14 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="onboarding" />
-        <Stack.Screen name="tabs" />
+        <Stack.Screen 
+          name="volunteer" 
+          options={{
+            headerShown: true,
+            title: "Volunteer",
+            presentation: 'card',
+          }}
+        />
         <Stack.Screen 
           name="emergency" 
           options={{
@@ -15,37 +25,11 @@ export default function RootLayout() {
             animation: 'slide_from_bottom',
           }} 
         />
-        
         <Stack.Screen 
-          name="volunteer/index" 
+          name="member" 
           options={{
             headerShown: true,
-            title: "Volunteer",
-            headerStyle: {
-              backgroundColor: "#fff",
-            },
-            headerTintColor: "#000",
-            headerTitleStyle: {
-              fontWeight: "bold",
-              fontSize: 20,
-            },
-            headerTitleAlign: "center",
-          }}
-        />
-        <Stack.Screen 
-          name="member/[id]" 
-          options={{
-            headerShown: true,
-            title: "Member Details",
-            headerStyle: {
-              backgroundColor: "#fff",
-            },
-            headerTintColor: "#000",
-            headerTitleStyle: {
-              fontWeight: "bold",
-              fontSize: 20,
-            },
-            headerTitleAlign: "center",
+            title: "Members",
           }}
         />
         <Stack.Screen 
@@ -53,39 +37,9 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: "Settings",
-            headerStyle: {
-              backgroundColor: "#fff",
-            },
-            headerTintColor: "#000",
-            headerTitleStyle: {
-              fontWeight: "bold",
-              fontSize: 20,
-            },
-            headerTitleAlign: "center",
-            contentStyle: {
-              paddingTop: 10,
-            },
           }}
         />
-        <Stack.Screen 
-          name="tabs/members" 
-          options={{
-            headerShown: true,
-            title: "Manage Members",
-            headerStyle: {
-              backgroundColor: "#fff",
-            },
-            headerTintColor: "#000",
-            headerTitleStyle: {
-              fontWeight: "bold",
-              fontSize: 20,
-            },
-            headerTitleAlign: "center",
-            contentStyle: {
-              paddingTop: 30,
-            },
-          }}
-        />
+        <Stack.Screen name="home" />
       </Stack>
     </UserProvider>
   );

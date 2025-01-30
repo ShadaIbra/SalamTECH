@@ -2,9 +2,16 @@ import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert } from 
 import { router } from "expo-router";
 import { useState } from "react";
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { doc, setDoc, getFirestore, collection, addDoc } from 'firebase/firestore';
 import { Ionicons } from "@expo/vector-icons";
 import { useUser } from '../utils/userContext';
+
+// Add this component for required field labels
+const RequiredLabel = ({ text }: { text: string }) => (
+  <Text style={styles.label}>
+    {text} <Text style={styles.requiredStar}>*</Text>
+  </Text>
+);
 
 export default function Register() {
   const [firstName, setFirstName] = useState('');
@@ -21,7 +28,7 @@ export default function Register() {
     try {
       // Basic validation
       if (!firstName || !lastName || !email || !password || !phone) {
-        Alert.alert("Error", "Please fill in all fields");
+        Alert.alert("Error", "Please fill required fields");
         return;
       }
 
@@ -32,23 +39,53 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Save all user data to Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        firstName,
-        lastName,
-        dateOfBirth: `${year}-${month}-${day}`,
-        phone,
-        email,
+      const dateOfBirth = `${year}/${month}/${day}`;
+
+      const userDocRef = doc(db, "users", user.uid);
+
+      // Main user profile
+      await setDoc(userDocRef, {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dateOfBirth,
+        phone: phone.trim(),
+        email: email.trim().toLowerCase(),
         createdAt: new Date().toISOString(),
-        // Initialize other profile fields as empty
         gender: "",
         nationality: "",
         idNumber: "",
         bloodType: "",
       });
 
+      // Create sub-collections for different types of data
+      // Example: Medical History
+      const medicalHistoryRef = collection(db, "users", user.uid, "medicalHistory");
+      await addDoc(medicalHistoryRef, {
+        createdAt: new Date().toISOString(),
+        conditions: [],
+        allergies: [],
+        medications: []
+      });
+
+      // Example: Emergency Contacts
+      const emergencyContactsRef = collection(db, "users", user.uid, "emergencyContacts");
+      await addDoc(emergencyContactsRef, {
+        createdAt: new Date().toISOString(),
+        contacts: []
+      });
+
+      // Example: Insurance Information
+      const insuranceRef = collection(db, "users", user.uid, "insurance");
+      await addDoc(insuranceRef, {
+        createdAt: new Date().toISOString(),
+        provider: "",
+        policyNumber: "",
+        coverage: {}
+      });
+
       setUserType('registered');
-      router.replace("/tabs/home");
+      router.replace("/home/home");
+
     } catch (error: any) {
       console.log("Detailed error:", error);
       Alert.alert("Registration Error", error.message);
@@ -58,68 +95,93 @@ export default function Register() {
   return (
     <ScrollView style={styles.scrollView}>
       <View style={styles.container}>
-
+        <RequiredLabel text="First Name" />
         <TextInput
           style={styles.input}
-          placeholder="First Name"
+          placeholder="Enter your first name"
+          placeholderTextColor="#999999"
           value={firstName}
           onChangeText={setFirstName}
           autoCapitalize="words"
         />
+
+        <RequiredLabel text="Last Name" />
         <TextInput
           style={styles.input}
-          placeholder="Last Name"
+          placeholder="Enter your last name"
+          placeholderTextColor="#999999"
           value={lastName}
           onChangeText={setLastName}
           autoCapitalize="words"
         />
-        
-        <Text style={styles.label}>Date of Birth</Text>
+
+<Text style={styles.label}>Date of Birth</Text>
         <View style={styles.dateContainer}>
-          <TextInput
-            style={[styles.dateInput, styles.dayMonth]}
-            placeholder="DD"
-            value={day}
-            onChangeText={setDay}
-            keyboardType="number-pad"
-            maxLength={2}
-          />
-          <TextInput
-            style={[styles.dateInput, styles.dayMonth]}
-            placeholder="MM"
-            value={month}
-            onChangeText={setMonth}
-            keyboardType="number-pad"
-            maxLength={2}
-          />
-          <TextInput
-            style={[styles.dateInput, styles.year]}
-            placeholder="YYYY"
-            value={year}
-            onChangeText={setYear}
-            keyboardType="number-pad"
-            maxLength={4}
-          />
+          <View style={styles.dateInputContainer}>
+            <TextInput
+              style={[styles.dateInput, styles.dayMonth]}
+              placeholder="DD"
+              placeholderTextColor="#999999"
+              value={day}
+              onChangeText={setDay}
+              keyboardType="numeric"
+              returnKeyType="next"
+              maxLength={2}
+            />
+          </View>
+          <View style={styles.dateInputContainer}>
+            <TextInput
+              style={[styles.dateInput, styles.dayMonth]}
+              placeholder="MM"
+              placeholderTextColor="#999999"
+              value={month}
+              onChangeText={setMonth}
+              keyboardType="numeric"
+              returnKeyType="next"
+              maxLength={2}
+            />
+          </View>
+          <View style={styles.dateInputContainer}>
+            <TextInput
+              style={[styles.dateInput, styles.year]}
+              placeholder="YYYY"
+              placeholderTextColor="#999999"
+              value={year}
+              onChangeText={setYear}
+              keyboardType="numeric"
+              returnKeyType="next"
+              maxLength={4}
+            />
+          </View>
         </View>
 
+        <RequiredLabel text="Phone Number" />
         <TextInput
           style={styles.input}
-          placeholder="Phone Number"
+          placeholder="Enter your phone number"
+          placeholderTextColor="#999999"
           value={phone}
           onChangeText={setPhone}
-          keyboardType="phone-pad"
+          keyboardType="numeric"
+          returnKeyType="next"
         />
+
+        <RequiredLabel text="Email" />
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Enter your email address"
+          placeholderTextColor="#999999"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
+
+        <RequiredLabel text="Password" />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Create a password"
+          placeholderTextColor="#999999"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -143,23 +205,33 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: "center",
   },
+  label: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 8,
+  },
+  smallLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 4,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     padding: 15,
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 20,
     fontSize: 16,
-  },
-  label: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 5,
   },
   dateContainer: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 15,
+    marginBottom: 20,
+  },
+  dateInputContainer: {
+    flex: 1,
   },
   dateInput: {
     borderWidth: 1,
@@ -173,7 +245,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   year: {
-    flex: 1.5,
+    flex: 1,
   },
   button: {
     backgroundColor: "#007AFF",
@@ -197,5 +269,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     color: '#007AFF',
+  },
+  requiredStar: {
+    color: '#FF3B30',
+    fontSize: 16,
   },
 }); 

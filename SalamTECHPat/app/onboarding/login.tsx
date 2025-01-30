@@ -1,4 +1,4 @@
-import { View, Text, TextInput, StyleSheet, Pressable, Alert } from "react-native";
+import { View, Text, TextInput, StyleSheet, Pressable, Alert, Image } from "react-native";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
@@ -16,19 +16,30 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       setUserType('registered');
-      router.replace("/tabs/home");
+      router.replace("/home/home");
     } catch (error: any) {
       Alert.alert("Login Error", error.message);
     }
   };
+  
+  const handleRegister = async () => {
+    router.push("/onboarding/register");
+  };
 
   const handleGuestLogin = () => {
     setUserType('guest');
-    router.replace("/tabs/home");
+    router.replace("/home/home");
   };
 
   return (
     <View style={styles.container}>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require('../../assets/images/SalamTECH-Logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </View>
       
       <View style={styles.inputContainer}>
         <TextInput
@@ -69,7 +80,7 @@ export default function Login() {
 
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>Don't have an account? </Text>
-        <Pressable onPress={() => router.push("/onboarding/register")}>
+        <Pressable onPress={handleRegister}>
           <Text style={styles.registerLink}>Register</Text>
         </Pressable>
       </View>
@@ -82,6 +93,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     justifyContent: "center",
+    backgroundColor: 'white',
   },
   input: {
     borderWidth: 1,
@@ -147,5 +159,13 @@ const styles = StyleSheet.create({
   },
   guestButtonText: {
     color: '#007AFF',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: 200,  // Adjust size as needed
+    height: 80,  // Adjust size as needed
   },
 }); 

@@ -32,14 +32,9 @@ export default function Welcome() {
   return (
     <View style={styles.container}>
       <Animated.Image
-        source={require("../../assets/images/SalamTech4.png")}
-        style={[
-          styles.logo,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}
+        source={require("../../assets/images/SalamTECH-Logo2.png")}
+        style={styles.logo}
+        resizeMode="contain"
       />
     </View>
   );
@@ -53,7 +48,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   logo: {
-    width: 300,
+    width: 400,
     height: 300,
   },
 });

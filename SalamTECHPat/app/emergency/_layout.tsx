@@ -14,6 +14,18 @@ export default function EmergencyLayout() {
           headerTitleStyle: {
             fontWeight: "bold",
           },
+          headerBackVisible: true,
+        }}
+      />
+      <Stack.Screen 
+        name="recipient"
+        options={{
+          title: "Who Needs Help",
+          headerStyle: {
+            backgroundColor: "#FF3B30",
+          },
+          headerTintColor: "#fff",
+          headerBackVisible: true,
         }}
       />
       <Stack.Screen 
@@ -24,10 +36,7 @@ export default function EmergencyLayout() {
             backgroundColor: "#FF3B30",
           },
           headerTintColor: "#fff",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-          headerBackTitle: "Back",
+          headerBackVisible: true,
         }}
       />
     </Stack>

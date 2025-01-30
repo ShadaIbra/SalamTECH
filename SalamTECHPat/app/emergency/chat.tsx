@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { openai } from '../utils/openai';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 interface Message {
   id: string;
@@ -75,6 +75,8 @@ export default function EmergencyChat() {
   const params = useLocalSearchParams();
   const type = params.type as string;
   const recipient = params.recipient as 'self' | 'other';
+  
+  const router = useRouter();
   
   console.log('Type:', type, 'Recipient:', recipient);
 
@@ -319,6 +321,15 @@ Guidelines:
     }
   };
 
+  const handleVoiceInput = () => {
+    if (chatId) {
+      router.push({
+        pathname: '/emergency/voice-input/[chatId]',
+        params: { chatId }
+      });
+    }
+  };
+
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={[
       styles.messageContainer,
@@ -368,6 +379,9 @@ Guidelines:
           multiline
           onFocus={scrollToBottom}
         />
+        <Pressable style={styles.voiceButton} onPress={handleVoiceInput}>
+          <Ionicons name="mic" size={24} color="white" />
+        </Pressable>
         {isLoading ? (
           <View style={styles.sendButton}>
             <ActivityIndicator color="#fff" />
@@ -434,6 +448,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopWidth: 1,
     borderTopColor: "#eee",
+    gap: 8,
   },
   input: {
     flex: 1,
@@ -444,6 +459,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
     fontSize: 16,
     maxHeight: 100,
+  },
+  voiceButton: {
+    backgroundColor: "#34C759",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
   },
   sendButton: {
     backgroundColor: "#FF3B30",

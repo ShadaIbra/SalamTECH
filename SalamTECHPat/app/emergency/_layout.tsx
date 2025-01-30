@@ -39,6 +39,14 @@ export default function EmergencyLayout() {
           headerBackVisible: true,
         }}
       />
+      <Stack.Screen 
+        name="voice-input/[chatId]" 
+        options={{
+          title: "Voice Input",
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
     </Stack>
   );
 } 

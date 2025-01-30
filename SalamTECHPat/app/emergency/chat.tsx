@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { openai } from '../utils/openai';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useLocalSearchParams } from 'expo-router';
 
 interface Message {
@@ -30,6 +30,7 @@ interface EmergencyData {
   userData: {
     name: string | null;
     email: string | null;
+    dateOfBirth?: string | null;
   } | null;
   emergencyQuestions: EmergencyQuestions[];
   veryUrgentQuestions: EmergencyQuestions[];
@@ -44,6 +45,24 @@ const initialMessages: Message[] = [
     timestamp: new Date(),
   }
 ];
+
+function calculateAge(dateOfBirth: string | null): string {
+  if (!dateOfBirth) return '';
+  
+  // Split the "year/month/day" format
+  const [year, month, day] = dateOfBirth.split('/');
+  const dob = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  const today = new Date();
+  
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  
+  return age.toString();
+}
 
 export default function EmergencyChat() {
   const flatListRef = useRef<FlatList>(null);
@@ -74,20 +93,37 @@ export default function EmergencyChat() {
       }
 
       const db = getFirestore();
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.data();
       
-      // Create new emergency chat document with the correct type
+      // Combine first and last name
+      const fullName = userData ? 
+        `${userData.firstName || ''} ${userData.lastName || ''}`.trim() : '';
+      
+      const dateOfBirth = userData?.dateOfBirth || null;
+      const calculatedAge = calculateAge(dateOfBirth);
+      
+      console.log('User Data:', {
+        uid: user.uid,
+        fullName,
+        dateOfBirth,
+        calculatedAge,
+        firestoreData: userData
+      });
+
       const emergencyData: EmergencyData = {
         userId: user.uid,
-        name: '',
-        age: '',
-        type: type, // This will now have the correct emergency type
+        name: recipient === 'self' ? fullName : '',
+        age: recipient === 'self' ? calculatedAge : '',
+        type: type,
         location: '',
         recipient: recipient,
         status: 'active',
         createdAt: serverTimestamp(),
         userData: recipient === 'self' ? {
-          name: user.displayName,
+          name: fullName,
           email: user.email,
+          dateOfBirth: dateOfBirth
         } : null,
         emergencyQuestions: [],
         veryUrgentQuestions: [],
@@ -104,10 +140,12 @@ export default function EmergencyChat() {
       setChatId(docRef.id);
       setEmergencyData(emergencyData);
       
-      // Initialize chat with a system message including the emergency type
+      // Initialize chat with a system message
       const initialMessage: Message = {
         id: '0',
-        text: `Emergency Type: ${type}\nFor: ${recipient === 'self' ? 'Myself' : 'Someone Else'}`,
+        text: recipient === 'self' 
+          ? `Emergency Type: ${type}\nFor: Myself (${fullName || 'Unknown'}, Age: ${calculatedAge || 'Unknown'})`
+          : `Emergency Type: ${type}\nFor: Someone Else`,
         sender: 'ai',
         timestamp: new Date()
       };

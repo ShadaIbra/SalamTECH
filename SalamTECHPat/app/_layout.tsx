@@ -15,16 +15,7 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: "Volunteer",
-            headerStyle: {
-              backgroundColor: "#fff",
-            },
-            headerTintColor: "#007AFF",
             presentation: 'card',
-            headerLeft: () => (
-              <Pressable onPress={() => router.back()} style={{ marginLeft: 16 }}>
-                <Ionicons name="chevron-back" size={24} color="#007AFF" />
-              </Pressable>
-            ),
           }}
         />
         <Stack.Screen 

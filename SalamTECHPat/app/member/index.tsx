@@ -9,29 +9,36 @@ export default function Members() {
   const [members, setMembers] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      const auth = getAuth();
-      const db = getFirestore();
-      
-      if (auth.currentUser) {
+    const auth = getAuth();
+    
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
         try {
-          const membersRef = collection(db, `users/${auth.currentUser.uid}/members`);
+          console.log("1")
+          const db = getFirestore();
+          const membersRef = collection(db, `users/${user.uid}/members`);
           const q = query(membersRef);
           const querySnapshot = await getDocs(q);
+
+          console.log("2")
           
           const membersList = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
+
+          console.log("3")
           
           setMembers(membersList);
+
+          console.log("4")
         } catch (error) {
           console.error("Error fetching members:", error);
         }
       }
-    };
+    });
 
-    fetchMembers();
+    return () => unsubscribe();
   }, []);
 
   return (

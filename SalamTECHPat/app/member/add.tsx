@@ -1,17 +1,23 @@
-import { View, Text, StyleSheet, TextInput, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, TextInput, Pressable, Alert, ScrollView } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Ionicons } from "@expo/vector-icons";
 
 export default function AddMember() {
   const [name, setName] = useState('');
   const [relation, setRelation] = useState('');
+  const [phone, setPhone] = useState('');
+  const [gender, setGender] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [nationality, setNationality] = useState('');
+  const [idNumber, setIdNumber] = useState('');
+  const [bloodType, setBloodType] = useState('');
 
   const handleAddMember = async () => {
     if (!name || !relation) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert("Error", "Name and relation are required");
       return;
     }
 
@@ -20,13 +26,33 @@ export default function AddMember() {
     
     if (auth.currentUser) {
       try {
-        const membersRef = collection(db, `users/${auth.currentUser.uid}/members`);
-        await addDoc(membersRef, {
+        const memberData = {
           name,
           relation,
+          phone,
+          gender,
+          dateOfBirth,
+          nationality,
+          idNumber,
+          bloodType,
+          healthStatus: 'stable',
           createdAt: new Date().toISOString()
-        });
+        };
+
+        // Add to members subcollection
+        const membersRef = collection(db, `users/${auth.currentUser.uid}/members`);
+        const newMemberRef = await addDoc(membersRef, memberData);
         
+        // Update user's document
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userRef, {
+          familyMembers: arrayUnion({
+            id: newMemberRef.id,
+            name: memberData.name,
+            relation: memberData.relation
+          })
+        });
+
         router.back();
       } catch (error) {
         console.error("Error adding member:", error);
@@ -47,9 +73,9 @@ export default function AddMember() {
         <Text style={styles.headerTitle}>Add Family Member</Text>
       </View>
 
-      <View style={styles.form}>
+      <ScrollView style={styles.form}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Name</Text>
+          <Text style={styles.label}>Name *</Text>
           <TextInput
             style={styles.input}
             value={name}
@@ -59,12 +85,73 @@ export default function AddMember() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Relation</Text>
+          <Text style={styles.label}>Relation *</Text>
           <TextInput
             style={styles.input}
             value={relation}
             onChangeText={setRelation}
             placeholder="Enter relation (e.g., Son, Daughter)"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Phone</Text>
+          <TextInput
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Enter phone number"
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Gender</Text>
+          <TextInput
+            style={styles.input}
+            value={gender}
+            onChangeText={setGender}
+            placeholder="Enter gender"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Date of Birth</Text>
+          <TextInput
+            style={styles.input}
+            value={dateOfBirth}
+            onChangeText={setDateOfBirth}
+            placeholder="YYYY-MM-DD"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Nationality</Text>
+          <TextInput
+            style={styles.input}
+            value={nationality}
+            onChangeText={setNationality}
+            placeholder="Enter nationality"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>ID Number</Text>
+          <TextInput
+            style={styles.input}
+            value={idNumber}
+            onChangeText={setIdNumber}
+            placeholder="Enter ID number"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Blood Type</Text>
+          <TextInput
+            style={styles.input}
+            value={bloodType}
+            onChangeText={setBloodType}
+            placeholder="Enter blood type"
           />
         </View>
 
@@ -74,7 +161,7 @@ export default function AddMember() {
         >
           <Text style={styles.addButtonText}>Add Member</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -105,6 +192,7 @@ const styles = StyleSheet.create({
   },
   form: {
     padding: 20,
+    flex: 1,
   },
   inputGroup: {
     marginBottom: 20,

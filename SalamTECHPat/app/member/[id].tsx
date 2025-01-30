@@ -41,11 +41,15 @@ export default function MemberDetail() {
           if (memberDoc.exists()) {
             setMember({ id: memberDoc.id, ...memberDoc.data() as Omit<MemberData, 'id'> });
           } else {
-            throw new Error("Member not found");
+            setError("Member not found");
+            setTimeout(() => router.back(), 2000); // Go back after showing error
           }
         } catch (error) {
           console.error("Error fetching member details:", error);
-          router.back();
+          setError("Failed to load member details");
+          setTimeout(() => router.back(), 2000);
+        } finally {
+          setLoading(false);
         }
       }
     };

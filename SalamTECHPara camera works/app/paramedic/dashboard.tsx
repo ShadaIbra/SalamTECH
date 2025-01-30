@@ -55,6 +55,8 @@ export default function Dashboard() {
   const [selectedRoute, setSelectedRoute] = useState<Patient | null>(null);
   const router = useRouter();
   const [completedRoutes, setCompletedRoutes] = useState<string[]>([]);
+  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   // Updated patients data with info and assessment for each patient
   const patients: Patient[] = [
@@ -598,6 +600,8 @@ export default function Dashboard() {
     </Modal>
   );
 
+
+
   return (
     <View style={styles.container}>
       <MapView
@@ -945,6 +949,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  exitCamera: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scanFrame: {
     width: 250,
     height: 250,
@@ -956,12 +972,11 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     marginTop: 20,
+    textAlign: 'center',
   },
-  exitCamera: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
+  camera: {
+    flex: 1,
+    width: '100%',
   },
   goButton: {
     backgroundColor: '#FF3B30',

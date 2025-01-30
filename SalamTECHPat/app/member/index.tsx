@@ -7,6 +7,7 @@ import { getFirestore, collection, query, getDocs } from 'firebase/firestore';
 
 export default function Members() {
   const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const auth = getAuth();
@@ -14,27 +15,26 @@ export default function Members() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         try {
-          console.log("1")
           const db = getFirestore();
           const membersRef = collection(db, `users/${user.uid}/members`);
           const q = query(membersRef);
           const querySnapshot = await getDocs(q);
-
-          console.log("2")
           
           const membersList = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
-
-          console.log("3")
           
           setMembers(membersList);
-
-          console.log("4")
+          console.log("Members list:", membersList);
         } catch (error) {
           console.error("Error fetching members:", error);
+        } finally {
+          setLoading(false);
         }
+      } else {
+        setMembers([]);
+        setLoading(false);
       }
     });
 
@@ -48,22 +48,36 @@ export default function Members() {
       </View>
 
       <ScrollView style={styles.content}>
-        {members.map((member) => (
-          <Pressable 
-            key={member.id}
-            style={styles.memberCard}
-            onPress={() => router.push({
-              pathname: "/member/[id]",
-              params: { id: member.id }
-            } as any)}
-          >
-            <View style={styles.memberInfo}>
-              <Text style={styles.memberName}>{member.name}</Text>
-              <Text style={styles.memberRelation}>{member.relation}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#666" />
-          </Pressable>
-        ))}
+        {loading ? (
+          <View style={styles.emptyState}>
+            <Text>Loading...</Text>
+          </View>
+        ) : members.length > 0 ? (
+          members.map((member) => (
+            <Pressable 
+              key={member.id}
+              style={styles.memberCard}
+              onPress={() => router.push({
+                pathname: "/member/[id]",
+                params: { id: member.id }
+              } as any)}
+            >
+              <View style={styles.memberInfo}>
+                <Text style={styles.memberName}>{member.name}</Text>
+                <Text style={styles.memberRelation}>{member.relation}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#666" />
+            </Pressable>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="people-outline" size={48} color="#999" />
+            <Text style={styles.emptyStateText}>No family members added yet</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Add your first family member by tapping the button below
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       <Pressable 
@@ -138,5 +152,24 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 }); 

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from 'react-native-maps';
@@ -6,51 +6,45 @@ import { useState, useEffect } from "react";
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
-interface MemberData {
-  id: string;
-  name: string;
-  relation: string;
-  phone: string;
-  gender: string;
-  dateOfBirth: string;
-  nationality: string;
-  idNumber: string;
-  bloodType: string;
-  healthStatus?: 'stable' | 'pending';
-  location?: {
-    latitude: number;
-    longitude: number;
-    timestamp: string;
-  };
-}
-
-export default function MemberDetail() {
+export default function MemberDetails() {
   const { id } = useLocalSearchParams();
-  const [member, setMember] = useState<MemberData | null>(null);
+  const [member, setMember] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMember = async () => {
-      const auth = getAuth();
-      const db = getFirestore();
-      
-      if (auth.currentUser && id) {
-        try {
-          const memberDoc = await getDoc(doc(db, `users/${auth.currentUser.uid}/members/${id}`));
-          if (memberDoc.exists()) {
-            setMember({ id: memberDoc.id, ...memberDoc.data() as Omit<MemberData, 'id'> });
-          } else {
-            setError("Member not found");
-            setTimeout(() => router.back(), 2000); // Go back after showing error
-          }
-        } catch (error) {
-          console.error("Error fetching member details:", error);
-          setError("Failed to load member details");
-          setTimeout(() => router.back(), 2000);
-        } finally {
-          setLoading(false);
+      try {
+        const auth = getAuth();
+        if (!auth.currentUser) {
+          console.log("No authenticated user");
+          return;
         }
+
+        const db = getFirestore();
+        const memberRef = doc(db, `users/${auth.currentUser.uid}/members/${id}`);
+        console.log("Fetching member with path:", `users/${auth.currentUser.uid}/members/${id}`);
+        
+        const memberDoc = await getDoc(memberRef);
+        console.log("Member doc exists:", memberDoc.exists(), "Data:", memberDoc.data());
+
+        if (memberDoc.exists()) {
+          setMember({
+            id: memberDoc.id,
+            ...memberDoc.data(),
+            location: {
+              latitude: 25.2854,
+              longitude: 51.5310,
+              timestamp: new Date(),
+            },
+            healthStatus: 'stable'
+          });
+        } else {
+          console.log("Member document not found");
+        }
+      } catch (error) {
+        console.error("Error fetching member:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -59,34 +53,27 @@ export default function MemberDetail() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.container}>
+        <Text>Loading...</Text>
       </View>
     );
   }
 
-  if (error || !member) {
+  if (!member) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error || 'Member not found'}</Text>
+      <View style={styles.container}>
+        <Text>Member not found</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable 
-          style={styles.backButton} 
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={24} color="#007AFF" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Member Details</Text>
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.infoCard}>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.header}>
+          <View style={styles.profilePicture}>
+            <Ionicons name="person" size={60} color="#ccc" />
+          </View>
           <Text style={styles.name}>{member.name}</Text>
           <Text style={styles.relation}>{member.relation}</Text>
         </View>
@@ -103,23 +90,23 @@ export default function MemberDetail() {
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.label}>Phone</Text>
-            <Text style={styles.value}>{member.phone}</Text>
+            <Text style={styles.value}>+974 5555-5555</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.label}>Gender</Text>
-            <Text style={styles.value}>{member.gender}</Text>
+            <Text style={styles.value}>Female</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.label}>Date of Birth</Text>
-            <Text style={styles.value}>{member.dateOfBirth}</Text>
+            <Text style={styles.value}>15/03/1988</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.label}>Nationality</Text>
-            <Text style={styles.value}>{member.nationality}</Text>
+            <Text style={styles.value}>Qatar</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.label}>ID Number</Text>
-            <Text style={styles.value}>{member.idNumber}</Text>
+            <Text style={styles.value}>987654321</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.label}>Blood Type</Text>
@@ -127,58 +114,54 @@ export default function MemberDetail() {
           </View>
         </View>
 
-        {member.healthStatus && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Health Status</Text>
-            <View style={styles.statusContainer}>
-              <View style={[
-                styles.statusBadge,
-                member.healthStatus === 'stable' ? styles.statusStableBg : styles.statusPendingBg
-              ]}>
-                <Ionicons 
-                  name={member.healthStatus === 'stable' ? "checkmark-circle" : "warning"} 
-                  size={24} 
-                  color="white" 
-                />
-                <Text style={styles.statusText}>
-                  {member.healthStatus.toUpperCase()}
-                </Text>
-              </View>
-              <Text style={styles.lastUpdated}>
-                Last updated: {new Date().toLocaleTimeString()}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Health Status</Text>
+          <View style={styles.statusContainer}>
+            <View style={[
+              styles.statusBadge,
+              member.healthStatus === 'stable' ? styles.statusStableBg : styles.statusPendingBg
+            ]}>
+              <Ionicons 
+                name={member.healthStatus === 'stable' ? "checkmark-circle" : "warning"} 
+                size={24} 
+                color="white" 
+              />
+              <Text style={styles.statusText}>
+                {member.healthStatus.toUpperCase()}
               </Text>
             </View>
-          </View>
-        )}
-
-        {member.location && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Live Location</Text>
-            <Text style={styles.locationTimestamp}>
-              Last updated: {new Date(member.location.timestamp).toLocaleTimeString()}
+            <Text style={styles.lastUpdated}>
+              Last updated: {new Date().toLocaleTimeString()}
             </Text>
-            <View style={styles.mapContainer}>
-              <MapView
-                style={styles.map}
-                initialRegion={{
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Live Location</Text>
+          <Text style={styles.locationTimestamp}>
+            Last updated: {member.location.timestamp.toLocaleTimeString()}
+          </Text>
+          <View style={styles.mapContainer}>
+            <MapView
+              style={styles.map}
+              initialRegion={{
+                latitude: member.location.latitude,
+                longitude: member.location.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
+            >
+              <Marker
+                coordinate={{
                   latitude: member.location.latitude,
                   longitude: member.location.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
                 }}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: member.location.latitude,
-                    longitude: member.location.longitude,
-                  }}
-                  title={member.name}
-                />
-              </MapView>
-            </View>
+                title={member.name}
+              />
+            </MapView>
           </View>
-        )}
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -188,49 +171,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+  scrollView: {
+    flex: 1,
+  },
   header: {
     backgroundColor: "white",
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    alignItems: "center",
+    paddingVertical: 30,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
-    flexDirection: 'row',
+  },
+  profilePicture: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  backButton: {
-    marginRight: 10,
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#333",
-  },
-  content: {
-    padding: 20,
-  },
-  infoCard: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 16,
   },
   name: {
     fontSize: 24,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   relation: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#666",
   },
   section: {
@@ -299,21 +266,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     color: '#666',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    textAlign: 'center',
   },
 }); 

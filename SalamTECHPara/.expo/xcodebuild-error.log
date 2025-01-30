@@ -1,0 +1,10 @@
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, id:E2609DEC-44B1-414E-B278-09EF2C3B5E7F, OS:18.2, name:iPhone 16 Pro }
+{ platform:iOS Simulator, id:E2609DEC-44B1-414E-B278-09EF2C3B5E7F, OS:18.2, name:iPhone 16 Pro }
+** BUILD FAILED **
+
+
+The following build commands failed:
+	PhaseScriptExecution [CP-User]\ Generate\ Specs /Users/macbookair/Library/Developer/Xcode/DerivedData/SalamTECH-bbisxrtukevvqbbridrcnjflonun/Build/Intermediates.noindex/Pods.build/Debug-iphonesimulator/ReactCodegen.build/Script-46EB2E00024870.sh (in target 'ReactCodegen' from project 'Pods')
+	Building workspace SalamTECH with scheme SalamTECH and configuration Debug
+(2 failures)

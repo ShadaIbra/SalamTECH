@@ -14,6 +14,8 @@ export default function VoiceInput() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [transcribedText, setTranscribedText] = useState<string>('');
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string>('');
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -90,10 +92,44 @@ export default function VoiceInput() {
                 timestamp: serverTimestamp()
               }
             );
-            
-            // Add a small delay to ensure the message is saved
-            await new Promise(resolve => setTimeout(resolve, 500));
-            router.back();
+
+            // Get AI response
+            setIsProcessingAI(true);
+            try {
+              const response = await openai.chat.completions.create({
+                messages: [
+                  {
+                    role: 'assistant',
+                    content: 'You are a concise emergency response assistant. Keep responses brief and focused on gathering essential information.'
+                  },
+                  {
+                    role: 'user',
+                    content: transcription
+                  }
+                ],
+                model: 'gpt-3.5-turbo',
+                max_tokens: 100,
+                temperature: 0.5,
+              });
+
+              const aiMessage = response.choices[0].message.content;
+              setAiResponse(aiMessage || 'Sorry, I could not process that.');
+
+              // Save AI response to Firestore
+              await addDoc(
+                collection(db, `emergencies/${chatId}/messages`),
+                {
+                  content: aiMessage,
+                  role: 'assistant',
+                  timestamp: serverTimestamp()
+                }
+              );
+            } catch (error) {
+              console.error('AI response error:', error);
+              setAiResponse('Error getting AI response. Please try again.');
+            } finally {
+              setIsProcessingAI(false);
+            }
           }
         } catch (error) {
           console.error('Transcription error:', error);
@@ -131,24 +167,35 @@ export default function VoiceInput() {
         <Text style={styles.subtitle}>
           {isRecording ? 'Recording...' : 
            isTranscribing ? 'Transcribing...' :
+           isProcessingAI ? 'Getting AI Response...' :
            'Tap the microphone to start recording'}
         </Text>
         
         {transcribedText ? (
-          <Text style={styles.transcription}>{transcribedText}</Text>
+          <View style={styles.messageContainer}>
+            <Text style={styles.transcriptionLabel}>You said:</Text>
+            <Text style={styles.transcription}>{transcribedText}</Text>
+          </View>
+        ) : null}
+
+        {aiResponse ? (
+          <View style={styles.messageContainer}>
+            <Text style={styles.aiResponseLabel}>AI Response:</Text>
+            <Text style={styles.aiResponse}>{aiResponse}</Text>
+          </View>
         ) : null}
         
         <Pressable 
           style={[
             styles.recordButton, 
             isRecording && styles.recordingButton,
-            isTranscribing && styles.transcribingButton
+            (isTranscribing || isProcessingAI) && styles.transcribingButton
           ]} 
           onPress={handleToggleRecording}
-          disabled={isTranscribing}
+          disabled={isTranscribing || isProcessingAI}
         >
           <Ionicons 
-            name={isRecording ? "stop" : isTranscribing ? "hourglass" : "mic"} 
+            name={isRecording ? "stop" : (isTranscribing || isProcessingAI) ? "hourglass" : "mic"} 
             size={40} 
             color="white" 
           />
@@ -206,5 +253,27 @@ const styles = StyleSheet.create({
   },
   transcribingButton: {
     backgroundColor: '#999',
+  },
+  messageContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  transcriptionLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  aiResponseLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+    marginTop: 16,
+  },
+  aiResponse: {
+    fontSize: 16,
+    color: '#333',
+    backgroundColor: '#e3f2fd',
+    padding: 10,
+    borderRadius: 8,
   },
 }); 

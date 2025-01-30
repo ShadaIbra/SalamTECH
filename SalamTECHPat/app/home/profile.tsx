@@ -193,7 +193,6 @@ export default function Profile() {
               value={editedData?.dateOfBirth}
               onChangeText={(text) => setEditedData({ ...editedData, dateOfBirth: text })}
               placeholder="YYYY/MM/DD"
-              keyboardType="phone-pad"
               placeholderTextColor="#999999"
             />
           ) : (

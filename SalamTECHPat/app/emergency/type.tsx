@@ -23,7 +23,15 @@ export default function EmergencyType() {
 
   const handleContinue = () => {
     if (selectedType || otherText) {
-      router.push("/emergency/recipient");
+      // Create emergency type string that includes other text if applicable
+      const emergencyType = selectedType === 'other' 
+        ? `other: ${otherText}`
+        : emergencyTypes.find(t => t.id === selectedType)?.label || selectedType;
+        
+      router.push({
+        pathname: "/emergency/recipient",
+        params: { emergencyType }
+      });
     }
   };
 

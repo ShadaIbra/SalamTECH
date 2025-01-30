@@ -1,15 +1,27 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function EmergencyForWho() {
+export default function EmergencyRecipient() {
+  const { emergencyType } = useLocalSearchParams<{ emergencyType: string }>();
+
+  const handleSelection = (recipient: 'self' | 'other') => {
+    router.push({
+      pathname: "/emergency/chat",
+      params: { 
+        type: emergencyType,
+        recipient 
+      }
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Who needs help?</Text>
       
       <Pressable 
         style={styles.option}
-        onPress={() => router.push("/emergency/chat")}
+        onPress={() => handleSelection('self')}
       >
         <View style={styles.iconContainer}>
           <Ionicons name="person" size={32} color="#007AFF" />
@@ -23,7 +35,7 @@ export default function EmergencyForWho() {
 
       <Pressable 
         style={styles.option}
-        onPress={() => router.push("/emergency/chat")}
+        onPress={() => handleSelection('other')}
       >
         <View style={styles.iconContainer}>
           <Ionicons name="people" size={32} color="#007AFF" />

@@ -6,10 +6,17 @@ import { Audio } from 'expo-av';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import * as FileSystem from 'expo-file-system';
 import { openai } from '../../utils/openai';
+import * as Speech from 'expo-speech';
 
 export default function VoiceInput() {
   const { chatId } = useLocalSearchParams();
   const router = useRouter();
+
+  if (!chatId || typeof chatId !== 'string') {
+    router.back();
+    return null;
+  }
+
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [transcribedText, setTranscribedText] = useState<string>('');
@@ -19,6 +26,7 @@ export default function VoiceInput() {
 
   useEffect(() => {
     return () => {
+      Speech.stop();
       if (recording) {
         recording.stopAndUnloadAsync();
       }
@@ -113,7 +121,7 @@ export default function VoiceInput() {
               });
 
               const aiMessage = response.choices[0].message.content;
-              setAiResponse(aiMessage || 'Sorry, I could not process that.');
+              await handleAIResponse(aiMessage);
 
               // Save AI response to Firestore
               await addDoc(
@@ -154,6 +162,26 @@ export default function VoiceInput() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const speakAIResponse = async (text: string) => {
+    try {
+      await Speech.stop();
+      await Speech.speak(text, {
+        language: 'en',
+        pitch: 1.0,
+        rate: 0.9,
+      });
+    } catch (error) {
+      console.error('Speech error:', error);
+    }
+  };
+
+  const handleAIResponse = async (aiMessage: string | null) => {
+    setAiResponse(aiMessage || 'Sorry, I could not process that.');
+    if (aiMessage) {
+      await speakAIResponse(aiMessage);
+    }
   };
 
   return (

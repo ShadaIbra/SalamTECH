@@ -39,10 +39,10 @@ export default function ParamedicLayout() {
           }}
         />
         <Stack.Screen
-          name="Scanner"
+          name="scanner"
           options={{
-            title: "QR Scanner",
-            headerShown: true,
+            title: 'Scan QR Code',
+            presentation: 'modal',
           }}
         />
       </Stack>

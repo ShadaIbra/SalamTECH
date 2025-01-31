@@ -143,9 +143,10 @@ export default function MapComponent({ onPinPress }: MapComponentProps) {
             <Callout
               onPress={() => {
                 router.push({
-                  pathname: "/paramedic/[id]",
+                  pathname: "/paramedic/moreInfo/[id]",
                   params: { id: emergency.id }
                 });
+
               }}
               style={styles.calloutContainer}
             >

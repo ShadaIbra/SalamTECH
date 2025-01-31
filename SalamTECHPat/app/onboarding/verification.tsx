@@ -3,12 +3,13 @@ import { router } from "expo-router";
 
 export default function Verification() {
   const handleSubmit = () => {
-    router.replace("/tabs/home");
+    router.replace("/home/home");
   };
 
   const handleSkip = () => {
-    router.replace("/tabs/home");
+    router.replace("/home/home");
   };
+
 
   return (
     <View style={styles.container}>

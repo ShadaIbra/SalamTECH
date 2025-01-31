@@ -262,13 +262,21 @@ export default function Profile() {
       </View>
 
       <View style={styles.menuSection}>
-        <Link href="/member/members" asChild>
+        {/* <Link href="../members" asChild>
           <Pressable style={styles.menuItem}>
             <Ionicons name="people" size={24} color="#007AFF" />
             <Text style={styles.menuItemText}>Manage Members</Text>
+
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </Pressable>
-        </Link>
+        </Link> */}
+
+        <Pressable style={styles.menuItem} onPress={() => router.push("/member/members")}>
+          <Ionicons name="people" size={24} color="#007AFF" />
+          <Text style={styles.menuItemText}>Manage Members</Text>
+          <Ionicons name="chevron-forward" size={24} color="#666" />
+        </Pressable>
+      
 
         <Pressable style={styles.menuItem} onPress={() => router.push("/settings")}>
           <Ionicons name="settings" size={24} color="#007AFF" />

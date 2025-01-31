@@ -3,14 +3,13 @@ import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapComponent from './Map';
-import { patients } from './data';
 import { useState } from 'react';
 import { Patient } from './types';
 
 export default function Dashboard() {
   const router = useRouter();
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [showPatientInfo, setShowPatientInfo] = useState(false);
+  const [selectedEmergency, setSelectedEmergency] = useState<any | null>(null);
+  const [showEmergencyInfo, setShowEmergencyInfo] = useState(false);
 
   const getMarkerColor = (status: string) => {
     switch (status) {
@@ -21,20 +20,15 @@ export default function Dashboard() {
     }
   };
 
-  const handlePinPress = (patientId: string) => {
-    const patient = patients.find((p: Patient) => p.id === patientId);
-    if (patient) {
-      setSelectedPatient(patient);
-      setShowPatientInfo(true);
-    }
+  const handlePinPress = (emergencyId: string) => {
+    // You might want to fetch additional emergency details here
+    setShowEmergencyInfo(true);
   };
 
   return (
     <View style={styles.container}>
       <MapComponent 
-        patients={patients}
         onPinPress={handlePinPress}
-        getMarkerColor={getMarkerColor}
       />
 
       <View style={styles.buttonContainer}>

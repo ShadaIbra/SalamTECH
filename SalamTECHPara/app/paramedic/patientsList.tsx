@@ -1,11 +1,24 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Patient } from './types';
-import { patients } from './data';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 export default function PatientsList() {
   const router = useRouter();
+  const [emergencies, setEmergencies] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'emergency'), (snapshot) => {
+      const emergencyData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setEmergencies(emergencyData);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const getMarkerColor = (status: string) => {
     switch (status) {
@@ -19,29 +32,29 @@ export default function PatientsList() {
   return (
     <View style={styles.container}>
       <ScrollView>
-        {patients.map((patient) => (
-          <View key={patient.id} style={styles.patientListItem}>
+        {emergencies.map((emergency) => (
+          <View key={emergency.id} style={styles.patientListItem}>
             <TouchableOpacity 
               style={styles.patientItem}
               onPress={() => {
                 router.push({
                   pathname: "/paramedic/route",
                   params: { 
-                    patientId: patient.id,
-                    patientName: patient.name,
-                    latitude: patient.coordinates.latitude,
-                    longitude: patient.coordinates.longitude
+                    patientId: emergency.id,
+                    patientName: emergency.name || 'Unknown',
+                    latitude: emergency.latitude,
+                    longitude: emergency.longitude
                   }
                 });
               }}
             >
-              <View style={[styles.statusDot, { backgroundColor: getMarkerColor(patient.status) }]} />
+              <View style={[styles.statusDot, { backgroundColor: getMarkerColor(emergency.status || 'needAssist') }]} />
               <View style={styles.patientInfo}>
                 <Text style={styles.patientName}>
-                  {patient.name}, {patient.age}
+                  {emergency.name || 'Unknown'}, {emergency.age || 'N/A'}
                 </Text>
                 <Text style={styles.patientDistance}>
-                  {patient.distance.toFixed(1)} km away
+                  Location recorded
                 </Text>
               </View>
             </TouchableOpacity>

@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 export default function Welcome() {
 
   const handleParamedicLogin = () => {
-    router.replace("/paramedic/login");
+    router.replace("/onboarding/login");
   };
 
   return (

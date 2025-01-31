@@ -4,19 +4,44 @@ import { useRouter } from 'expo-router';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
+interface Emergency {
+  id: string;
+  name?: string;
+  status?: string;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  age?: string;
+  timestamp?: any;
+  triageColor?: string;
+}
+
+
 export default function PatientsList() {
   const router = useRouter();
-  const [emergencies, setEmergencies] = useState<any[]>([]);
+  const [emergencies, setEmergencies] = useState<Emergency[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'emergency'), (snapshot) => {
+    // Set up real-time listener for emergencies collection
+    const emergenciesRef = collection(db, 'emergencies');
+    const unsubscribe = onSnapshot(emergenciesRef, (snapshot) => {
       const emergencyData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
-      setEmergencies(emergencyData);
+      })) as Emergency[];
+      
+      // Sort emergencies by timestamp if available
+      const sortedEmergencies = emergencyData.sort((a, b) => {
+        if (!a.timestamp || !b.timestamp) return 0;
+        return b.timestamp.seconds - a.timestamp.seconds;
+      });
+      
+      setEmergencies(sortedEmergencies);
+    }, (error) => {
+      console.error("Error fetching emergencies:", error);
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
@@ -43,12 +68,14 @@ export default function PatientsList() {
                     patientId: emergency.id,
                     patientName: emergency.name || 'Unknown',
                     latitude: emergency.latitude,
-                    longitude: emergency.longitude
+                    longitude: emergency.longitude,
+                    triageColor: emergency.triageColor,
                   }
                 });
               }}
+
             >
-              <View style={[styles.statusDot, { backgroundColor: getMarkerColor(emergency.status || 'needAssist') }]} />
+              <View style={[styles.statusDot, { backgroundColor: emergency.triageColor }]} />
               <View style={styles.patientInfo}>
                 <Text style={styles.patientName}>
                   {emergency.name || 'Unknown'}, {emergency.age || 'N/A'}

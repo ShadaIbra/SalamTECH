@@ -29,6 +29,7 @@ interface EmergencyData {
     longitude: number | null;
   };
   recipient: 'self' | 'other';
+  triageColor: 'red' | 'orange' | 'yellow' | 'green' | null,
   status: 'active' | 'resolved';
   createdAt: any; // FirebaseTimestamp
   userData: {
@@ -157,6 +158,7 @@ export default function EmergencyChat() {
           longitude: null
         },
         recipient: recipient,
+        triageColor: null,
         status: 'active',
         createdAt: serverTimestamp(),
         userData: recipient === 'self' ? {
@@ -414,6 +416,7 @@ Guidelines:
         type: data.type,
         location: data.location,
         recipient: data.recipient,
+        triageColor: data.triageColor,
         status: data.status,
         createdAt: data.createdAt,
         userData: data.userData,

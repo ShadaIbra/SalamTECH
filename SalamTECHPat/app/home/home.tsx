@@ -1,9 +1,10 @@
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface ChatHistory {
   id: string;
@@ -15,9 +16,11 @@ interface ChatHistory {
 export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
 
-  useEffect(() => {
-    loadChatHistory();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadChatHistory();
+    }, [])
+  );
 
   const loadChatHistory = async () => {
     try {

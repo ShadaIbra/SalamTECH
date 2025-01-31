@@ -36,6 +36,28 @@ interface EmergencyData {
     email: string | null;
     dateOfBirth?: string | null;
   } | null;
+  medicalAssessment: {
+    breathing: 'false' | 'acute' | 'true' | null;
+    seizure: 'current' | 'post' | 'false' | null;
+    burn: 'face' | 'electrical' | 'circumferential' | 'chemical' | 'other' | 'false' | null;
+    cardiacArrest: 'true' | 'false' | null;
+    fever: 'true' | 'false' | null;
+    dislocation: 'large joint' | 'finger' | 'toe' | 'false' | null;
+    fracture: 'compound' | 'closed' | 'false' | null;
+    haemorrhage: 'uncontrolled' | 'controlled' | 'false' | null;
+    vomitingBlood: 'true' | 'false' | null;
+    vomitingPersistent: 'true' | 'false' | null;
+    coughingBlood: 'true' | 'false' | null;
+    someOfUnconsciousness: 'true' | 'false' | null;
+    stabbedNeck: 'true' | 'false' | null;
+    facialDropping: 'true' | 'false' | null;
+    aggression: 'true' | 'false' | null;
+    eyeInjury: 'true' | 'false' | null;
+    poisoningOverdose: 'true' | 'false' | null;
+    limbCyanosis: 'true' | 'false' | null;
+    pregnant: 'true' | 'false' | null;
+    scaleOfPain: 'severe' | 'moderate' | null;
+  };
 }
 
 const initialMessages: Message[] = [
@@ -142,6 +164,28 @@ export default function EmergencyChat() {
           email: user.email,
           dateOfBirth: dateOfBirth
         } : null,
+        medicalAssessment: {
+          breathing: null,
+          seizure: null,
+          burn: null,
+          cardiacArrest: null,
+          fever: null,
+          dislocation: null,
+          fracture: null,
+          haemorrhage: null,
+          vomitingBlood: null,
+          vomitingPersistent: null,
+          coughingBlood: null,
+          someOfUnconsciousness: null,
+          stabbedNeck: null,
+          facialDropping: null,
+          aggression: null,
+          eyeInjury: null,
+          poisoningOverdose: null,
+          limbCyanosis: null,
+          pregnant: null,
+          scaleOfPain: null
+        }
       };
 
       console.log('Emergency Data being saved:', emergencyData);
@@ -371,7 +415,8 @@ Guidelines:
         recipient: data.recipient,
         status: data.status,
         createdAt: data.createdAt,
-        userData: data.userData
+        userData: data.userData,
+        medicalAssessment: data.medicalAssessment
       };
 
       setEmergencyData(emergencyData);

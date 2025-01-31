@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { openai } from '../utils/openai';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, query, orderBy, getDocs } from 'firebase/firestore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 interface Message {
@@ -23,7 +23,10 @@ interface EmergencyData {
   name: string;
   age: string;
   type: string;
-  location: string;
+  location: {
+    latitude: number | null;
+    longitude: number | null;
+  };
   recipient: 'self' | 'other';
   status: 'active' | 'resolved';
   createdAt: any; // FirebaseTimestamp
@@ -32,9 +35,6 @@ interface EmergencyData {
     email: string | null;
     dateOfBirth?: string | null;
   } | null;
-  emergencyQuestions: EmergencyQuestions[];
-  veryUrgentQuestions: EmergencyQuestions[];
-  urgentQuestions: EmergencyQuestions[];
 }
 
 const initialMessages: Message[] = [
@@ -118,7 +118,10 @@ export default function EmergencyChat() {
         name: recipient === 'self' ? fullName : '',
         age: recipient === 'self' ? calculatedAge : '',
         type: type,
-        location: '',
+        location: {
+          latitude: null,
+          longitude: null
+        },
         recipient: recipient,
         status: 'active',
         createdAt: serverTimestamp(),
@@ -127,9 +130,6 @@ export default function EmergencyChat() {
           email: user.email,
           dateOfBirth: dateOfBirth
         } : null,
-        emergencyQuestions: [],
-        veryUrgentQuestions: [],
-        urgentQuestions: [],
       };
 
       console.log('Emergency Data being saved:', emergencyData);
@@ -152,7 +152,25 @@ export default function EmergencyChat() {
         timestamp: new Date()
       };
       
-      setMessages([initialMessage]);
+      // After setting chatId, fetch all messages
+      if (docRef.id) {
+        const messagesRef = collection(db, `emergencies/${docRef.id}/messages`);
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+        const querySnapshot = await getDocs(q);
+        
+        const loadedMessages: Message[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            text: data.content,
+            sender: data.role === 'user' ? 'user' : 'ai',
+            timestamp: data.timestamp?.toDate() || new Date(),
+          };
+        });
+
+        // Set all messages including the initial system message
+        setMessages([initialMessage, ...loadedMessages]);
+      }
 
     } catch (error) {
       console.error("Error initializing emergency chat:", error);
@@ -172,17 +190,6 @@ export default function EmergencyChat() {
     } catch (error) {
       console.error("Error updating emergency data:", error);
     }
-  };
-
-  const addQuestionAnswer = async (
-    type: 'emergencyQuestions' | 'veryUrgentQuestions' | 'urgentQuestions',
-    question: string,
-    answer: string
-  ) => {
-    if (!chatId || !emergencyData) return;
-
-    const updatedQuestions = [...(emergencyData[type] || []), { question, answer }];
-    await updateEmergencyData(type, updatedQuestions);
   };
 
   const sendMessage = async () => {
@@ -225,7 +232,7 @@ Initial Questions, ask one by one and dont insist:
 1. "What is your name?" - Save this to 'name' field
 2. "What is your age?" - Save this to 'age' field
 
-we are trying to collect the following information, you dont have to collect them all, ask relevant questions based on the answer of the user. you dont have to ask to ask too many questions regarding one point as we are only collecting this information:
+we are trying to collect the following information, you dont have to collect them all, ask relevant questions based on the answer of the user. you dont have to ask to ask too many questions regarding one point as we are only collecting this information, make the questions simple for normal people to understand:
 1. Breathing (false/ acute/ true)
 2. Seizure (current/post/false)
 3. Burn (face/electrical/circumferential/ chemical/ other/ false)
@@ -273,33 +280,6 @@ Guidelines:
         sender: 'ai',
         timestamp: new Date(),
       };
-
-      // Process AI response for data collection
-      const aiResponse = response.choices[0].message.content;
-      if (aiResponse) {
-        // Check for name question/answer
-        if (aiResponse.toLowerCase().includes('what is your name') && newMessage) {
-          await updateEmergencyData('name', newMessage);
-        }
-        // Check for age question/answer
-        else if (aiResponse.toLowerCase().includes('what is your age') && newMessage) {
-          await updateEmergencyData('age', newMessage);
-        }
-        // Check for location question/answer
-        else if (aiResponse.toLowerCase().includes('location') && newMessage) {
-          await updateEmergencyData('location', newMessage);
-        }
-        // // Add to appropriate question category
-        // else if (emergencyData?.emergencyQuestions.length < 5) {
-        //   await addQuestionAnswer('emergencyQuestions', aiResponse, newMessage);
-        // }
-        // else if (emergencyData?.veryUrgentQuestions.length < 24) {
-        //   await addQuestionAnswer('veryUrgentQuestions', aiResponse, newMessage);
-        // }
-        // else if (emergencyData?.urgentQuestions.length < 10) {
-        //   await addQuestionAnswer('urgentQuestions', aiResponse, newMessage);
-        // }
-      }
 
       setMessages(prev => [...prev, aiMessage]);
 

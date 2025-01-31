@@ -3,10 +3,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import * as FileSystem from 'expo-file-system';
 import { openai } from '../../utils/openai';
 import * as Speech from 'expo-speech';
+import { getAuth } from 'firebase/auth';
 
 export default function VoiceInput() {
   const { chatId } = useLocalSearchParams();
@@ -23,6 +24,7 @@ export default function VoiceInput() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [aiResponse, setAiResponse] = useState<string>('');
   const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -51,7 +53,7 @@ export default function VoiceInput() {
     }
   }
 
-  async function stopRecording() {
+  const stopRecording = async () => {
     if (!recording) return;
 
     try {
@@ -104,11 +106,32 @@ export default function VoiceInput() {
             // Get AI response
             setIsProcessingAI(true);
             try {
+              const emergencyDoc = await getDoc(doc(db, 'emergencies', chatId));
+              const emergencyData = emergencyDoc.data();
+              
+              if (!emergencyData) {
+                console.error("No emergency data found");
+                return;
+              }
+
               const response = await openai.chat.completions.create({
                 messages: [
                   {
-                    role: 'assistant',
-                    content: 'You are a concise emergency response assistant. Keep responses brief and focused on gathering essential information.'
+                    role: 'system',
+                    content: `You are an emergency response virtual assistant. 
+Context: Speaking with ${emergencyData.name || 'Unknown'} (Age: ${emergencyData.age || 'Unknown'})
+Emergency Type: ${emergencyData.type}
+For: ${emergencyData.recipient === 'self' ? 'Self' : 'Someone Else'}
+
+Your role is to:
+- Handle this ${emergencyData.type} emergency situation
+- Ask clear, specific questions about the emergency
+- Prioritize gathering critical information (location, severity, symptoms)
+- Keep responses under 3 sentences
+- Provide brief, actionable instructions when needed
+- Maintain a calm, professional tone
+- Use the user's name (${emergencyData.name}) occasionally to personalize responses
+- Consider the user's age (${emergencyData.age}) when providing guidance`
                   },
                   {
                     role: 'user',
@@ -116,8 +139,8 @@ export default function VoiceInput() {
                   }
                 ],
                 model: 'gpt-3.5-turbo',
-                max_tokens: 100,
-                temperature: 0.5,
+                max_tokens: 150,
+                temperature: 0.3,
               });
 
               const aiMessage = response.choices[0].message.content;
@@ -146,11 +169,11 @@ export default function VoiceInput() {
           setIsTranscribing(false);
         }
       }
-    } catch (err) {
-      console.error('Failed to stop recording', err);
-      setIsTranscribing(false);
+    } catch (error) {
+      console.error('Error:', error);
+      setError('An error occurred while processing your voice input');
     }
-  }
+  };
 
   const handleToggleRecording = () => {
     if (isRecording) {
@@ -304,4 +327,21 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
-}); 
+});
+
+function calculateAge(dateOfBirth: string | null): string {
+  if (!dateOfBirth) return '';
+  
+  const [year, month, day] = dateOfBirth.split('/');
+  const dob = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  const today = new Date();
+  
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  
+  return age.toString();
+} 

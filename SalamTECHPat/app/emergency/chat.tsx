@@ -74,6 +74,7 @@ export default function EmergencyChat() {
   const [emergencyData, setEmergencyData] = useState<EmergencyData | null>(null);
   
   const params = useLocalSearchParams();
+  const existingChatId = params.chatId as string;
   const type = params.type as string;
   const recipient = params.recipient as 'self' | 'other';
   
@@ -82,7 +83,17 @@ export default function EmergencyChat() {
   console.log('Type:', type, 'Recipient:', recipient);
 
   useEffect(() => {
-    initializeEmergencyChat();
+    if (existingChatId) {
+      // If we have a chatId, load existing chat
+      setChatId(existingChatId);
+      loadExistingChat(existingChatId);
+    } else if (type && recipient) {
+      // If we have type and recipient, initialize new chat
+      initializeEmergencyChat();
+    } else {
+      console.error("Missing required params");
+      router.back();
+    }
   }, []);
 
   const initializeEmergencyChat = async () => {
@@ -339,25 +350,38 @@ Guidelines:
     flatListRef.current?.scrollToEnd({ animated: true });
   };
 
-  const loadMessages = async () => {
-    if (!chatId) return;
-
+  const loadExistingChat = async (chatId: string) => {
     try {
       const db = getFirestore();
-      
-      // First fetch emergency data to get user info
       const emergencyDoc = await getDoc(doc(db, 'emergencies', chatId));
       const data = emergencyDoc.data();
-      if (data) {
-        setEmergencyData(data as EmergencyData);  // Type assertion here
+      
+      if (!data) {
+        console.error("No emergency data found");
+        return;
       }
 
-      // Create initial message with user info from emergency data
+      // Type assertion to EmergencyData
+      const emergencyData: EmergencyData = {
+        userId: data.userId,
+        name: data.name,
+        age: data.age,
+        type: data.type,
+        location: data.location,
+        recipient: data.recipient,
+        status: data.status,
+        createdAt: data.createdAt,
+        userData: data.userData
+      };
+
+      setEmergencyData(emergencyData);
+
+      // Create initial message with emergency data
       const initialMessage: Message = {
         id: '0',
-        text: data?.recipient === 'self' 
-          ? `Emergency Type: ${data?.type || 'Unknown'}\nFor: Myself (${data?.name || 'Unknown'}, Age: ${data?.age || 'Unknown'})`
-          : `Emergency Type: ${data?.type || 'Unknown'}\nFor: Someone Else`,
+        text: emergencyData.recipient === 'self' 
+          ? `Emergency Type: ${emergencyData.type}\nFor: Myself (${emergencyData.name || 'Unknown'}, Age: ${emergencyData.age || 'Unknown'})`
+          : `Emergency Type: ${emergencyData.type}\nFor: Someone Else`,
         sender: 'ai',
         timestamp: new Date()
       };
@@ -385,14 +409,14 @@ Guidelines:
       }, 100);
 
     } catch (error) {
-      console.error("Error loading messages:", error);
+      console.error("Error loading existing chat:", error);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
       if (chatId) {
-        loadMessages();
+        loadExistingChat(chatId);
       }
     }, [chatId])
   );

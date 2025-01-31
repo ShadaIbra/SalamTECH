@@ -1,15 +1,59 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+import { Alert } from "react-native";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Add your paramedic authentication logic here
-    console.log("Logging in with:", username, password);
-    router.push("/paramedic/dashboard");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const auth = getAuth();
+      // First, authenticate the user
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Then check if they're a paramedic
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      
+      if (!userDoc.exists()) {
+        // No user document found
+        await auth.signOut();
+        Alert.alert("Error", "User profile not found");
+        return;
+      }
+
+      const userData = userDoc.data();
+      if (userData.userType !== 'paramedic') {
+        // Not a paramedic, sign them out
+        await auth.signOut();
+        Alert.alert("Access Denied", "Only paramedics can access this application");
+        return;
+      }
+
+      // If we get here, they're a paramedic
+      console.log("Login successful");
+      router.push("/paramedic/dashboard");
+      
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert(
+        "Login Failed",
+        error.message || "Please check your credentials and try again"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -24,10 +68,11 @@ export default function Login() {
       <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Paramedic ID"
-          value={username}
-          onChangeText={setUsername}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
           autoCapitalize="none"
+          keyboardType="email-address"
         />
         
         <TextInput
@@ -38,8 +83,14 @@ export default function Login() {
           secureTextEntry
         />
         
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Login</Text>
+        <TouchableOpacity 
+          style={[styles.loginButton, loading && styles.disabledButton]} 
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.loginButtonText}>
+            {loading ? "Logging in..." : "Login"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -88,5 +139,8 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  disabledButton: {
+    backgroundColor: "#999",
   },
 }); 

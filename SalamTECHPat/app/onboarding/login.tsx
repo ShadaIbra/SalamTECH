@@ -3,18 +3,37 @@ import { Link, router } from "expo-router";
 import { useState } from "react";
 import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { useUser } from '../utils/userContext';
+import { getFirestore, getDoc, doc } from 'firebase/firestore';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { setUserType } = useUser();
 
-  const auth = getAuth();
-  console.log("Firebase Auth State:", auth.currentUser);
-
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // First authenticate with Firebase
+      const auth = getAuth();
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Then check user type in Firestore
+      const db = getFirestore();
+      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+      
+      if (!userDoc.exists()) {
+        await auth.signOut();
+        Alert.alert("Error", "User data not found");
+        return;
+      }
+
+      const userData = userDoc.data();
+      if (userData.userType !== "patient") {
+        await auth.signOut();
+        Alert.alert("Access Denied", "This app is for patients only");
+        return;
+      }
+
+      // If we get here, user is a patient
       setUserType('registered');
       router.replace("/home/home");
     } catch (error: any) {

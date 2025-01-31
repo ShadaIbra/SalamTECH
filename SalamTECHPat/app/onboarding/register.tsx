@@ -55,6 +55,7 @@ export default function Register() {
         nationality: "",
         idNumber: "",
         bloodType: "",
+        userType: "patient",
       });
 
       // Create sub-collections for different types of data

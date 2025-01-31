@@ -58,30 +58,25 @@ export default function Register() {
         userType: "patient",
       });
 
-      // Create sub-collections for different types of data
-      // Example: Medical History
-      const medicalHistoryRef = collection(db, "users", user.uid, "medicalHistory");
-      await addDoc(medicalHistoryRef, {
+      const members = collection(db, "users", user.uid, "members");
+      await addDoc(members, {
+        firstName: "",
+        lastName: "",
+        dateOfBirth:  "",
+        phone: "",
+        email:  "",
         createdAt: new Date().toISOString(),
-        conditions: [],
-        allergies: [],
-        medications: []
+        gender: "",
+        nationality: "",
+        idNumber: "",
+        bloodType: "",
+        status: "",
       });
 
-      // Example: Emergency Contacts
       const emergencyContactsRef = collection(db, "users", user.uid, "emergencyContacts");
       await addDoc(emergencyContactsRef, {
         createdAt: new Date().toISOString(),
         contacts: []
-      });
-
-      // Example: Insurance Information
-      const insuranceRef = collection(db, "users", user.uid, "insurance");
-      await addDoc(insuranceRef, {
-        createdAt: new Date().toISOString(),
-        provider: "",
-        policyNumber: "",
-        coverage: {}
       });
 
       setUserType('registered');

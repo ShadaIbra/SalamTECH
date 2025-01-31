@@ -105,7 +105,7 @@ export default function EmergencyChat() {
   console.log('Type:', type, 'Recipient:', recipient);
 
   useEffect(() => {
-    if (existingChatId) {
+    if (existingChatId && typeof existingChatId === 'string') {
       // If we have a chatId, load existing chat
       setChatId(existingChatId);
       loadExistingChat(existingChatId);
@@ -458,12 +458,90 @@ Guidelines:
     }
   };
 
+  // Add this function to analyze chat and update medical assessment
+  const analyzeChatAndUpdateAssessment = async () => {
+    try {
+      if (!chatId) return;
+
+      // Format messages for GPT analysis, skipping the initial system message
+      const messagesForAnalysis = messages
+        .slice(1) // Skip initial message
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+          content: msg.text
+        }));
+
+      const response = await openai.chat.completions.create({
+        messages: [
+          {
+            role: 'system' as const,
+            content: `You are a medical data analyzer. Review the conversation and extract answers for these fields. 
+            Only respond in JSON format with the following structure, using null if information is not found:
+            {
+              "breathing": "false" | "acute" | "true" | null,
+              "seizure": "current" | "post" | "false" | null,
+              "burn": "face" | "electrical" | "circumferential" | "chemical" | "other" | "false" | null,
+              "cardiacArrest": "true" | "false" | null,
+              "fever": "true" | "false" | null,
+              "dislocation": "large joint" | "finger" | "toe" | "false" | null,
+              "fracture": "compound" | "closed" | "false" | null,
+              "haemorrhage": "uncontrolled" | "controlled" | "false" | null,
+              "vomitingBlood": "true" | "false" | null,
+              "vomitingPersistent": "true" | "false" | null,
+              "coughingBlood": "true" | "false" | null,
+              "someOfUnconsciousness": "true" | "false" | null,
+              "stabbedNeck": "true" | "false" | null,
+              "facialDropping": "true" | "false" | null,
+              "aggression": "true" | "false" | null,
+              "eyeInjury": "true" | "false" | null,
+              "poisoningOverdose": "true" | "false" | null,
+              "limbCyanosis": "true" | "false" | null,
+              "pregnant": "true" | "false" | null,
+              "scaleOfPain": "severe" | "moderate" | null
+            }
+            Only use the exact values specified. If information suggests a different value, use null.`
+          },
+          ...messagesForAnalysis
+        ],
+        model: 'gpt-3.5-turbo',
+        temperature: 0,
+        response_format: { type: "json_object" }
+      });
+
+      // Parse the response
+      const content = response.choices[0].message.content || '{}';
+      const assessment = JSON.parse(content);
+
+      // Update Firestore
+      const db = getFirestore();
+      await updateDoc(doc(db, 'emergencies', chatId), {
+        medicalAssessment: assessment
+      });
+
+      console.log('Medical assessment updated:', assessment);
+
+    } catch (error) {
+      console.error('Error analyzing chat:', error);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       if (chatId) {
         loadExistingChat(chatId);
       }
     }, [chatId])
+  );
+
+  // Add this to your useFocusEffect to analyze when leaving the chat
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (chatId) {
+          analyzeChatAndUpdateAssessment();
+        }
+      };
+    }, [messages, chatId])
   );
 
   return (

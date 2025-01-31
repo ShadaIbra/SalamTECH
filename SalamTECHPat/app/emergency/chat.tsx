@@ -152,7 +152,6 @@ export default function EmergencyChat() {
         timestamp: new Date()
       };
       
-      // After setting chatId, fetch all messages
       if (docRef.id) {
         const messagesRef = collection(db, `emergencies/${docRef.id}/messages`);
         const q = query(messagesRef, orderBy('timestamp', 'asc'));
@@ -168,7 +167,6 @@ export default function EmergencyChat() {
           };
         });
 
-        // Set all messages including the initial system message
         setMessages([initialMessage, ...loadedMessages]);
       }
 
@@ -232,7 +230,7 @@ Initial Questions, ask one by one and dont insist:
 1. "What is your name?" - Save this to 'name' field
 2. "What is your age?" - Save this to 'age' field
 
-we are trying to collect the following information, you dont have to collect them all, ask relevant questions based on the answer of the user. you dont have to ask to ask too many questions regarding one point as we are only collecting this information, make the questions simple for normal people to understand:
+we are trying to collect the following information, you dont have to collect them all, ask relevant questions based on the answer of the user. you dont have to ask to ask too many questions regarding one point as we are only collecting this information, make the questions simple for normal people to understand, only ask one thing at once:
 1. Breathing (false/ acute/ true)
 2. Seizure (current/post/false)
 3. Burn (face/electrical/circumferential/ chemical/ other/ false)

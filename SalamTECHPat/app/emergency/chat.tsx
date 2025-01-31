@@ -287,7 +287,8 @@ Initial Questions, ask one by one and dont insist:
 1. "What is your name?" - Save this to 'name' field
 2. "What is your age?" - Save this to 'age' field
 
-we are trying to collect the following information, you dont have to collect them all, ask relevant questions based on the answer of the user. you dont have to ask to ask too many questions regarding one point as we are only collecting this information, make the questions simple for normal people to understand, only ask one thing at once:
+we are trying to collect the following information, you dont have to collect them all, ask relevant questions based on the answer of the user. you dont have to ask to ask too many questions regarding one point as we are only collecting this information, make the questions simple for normal people to understand, only ask one thing at 
+dont ask the questions the way i put them for you, ask them in a way that is natural and easy to understand with common language:
 1. Breathing (false/ acute/ true)
 2. Seizure (current/post/false)
 3. Burn (face/electrical/circumferential/ chemical/ other/ false)

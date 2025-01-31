@@ -130,8 +130,8 @@ export default function MoreInfo() {
         onChange={setIndex}
         indicatorStyle={styles.tabIndicator}
       >
-        <Tab.Item title="Subjective" titleStyle={styles.tabTitle} />
         <Tab.Item title="Objective" titleStyle={styles.tabTitle} />
+        <Tab.Item title="Subjective" titleStyle={styles.tabTitle} />
       </Tab>
 
       <TabView value={index} onChange={setIndex} animationType="spring">

@@ -5,6 +5,7 @@ import { Patient } from './types';
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { useRouter } from 'expo-router';
 
 interface MapComponentProps {
   onPinPress: (patientId: string) => void;
@@ -77,8 +78,9 @@ const assessAndUpdateTriageColor = async (emergency: any) => {
   return triageColor;
 };
 
-export default function MapComponent({ onPinPress }: Omit<MapComponentProps, 'getMarkerColor'>) {
+export default function MapComponent({ onPinPress }: MapComponentProps) {
   const [emergencies, setEmergencies] = useState<any[]>([]);
+  const router = useRouter();
 
   const getMarkerColor = (triageColor: string) => {
     switch (triageColor) {
@@ -139,7 +141,12 @@ export default function MapComponent({ onPinPress }: Omit<MapComponentProps, 'ge
             pinColor={getMarkerColor(emergency.triageColor || 'green')}
           >
             <Callout
-              onPress={() => onPinPress(emergency.id)}
+              onPress={() => {
+                router.push({
+                  pathname: "/paramedic/[id]",
+                  params: { id: emergency.id }
+                });
+              }}
               style={styles.calloutContainer}
             >
               <View style={styles.calloutContent}>

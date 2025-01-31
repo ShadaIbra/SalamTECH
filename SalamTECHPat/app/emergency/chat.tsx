@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet, TextInput, Pressable, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { openai } from '../utils/openai';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, query, orderBy, getDocs } from 'firebase/firestore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Message {
   id: string;
@@ -142,16 +143,7 @@ export default function EmergencyChat() {
       setChatId(docRef.id);
       setEmergencyData(emergencyData);
       
-      // Initialize chat with a system message
-      const initialMessage: Message = {
-        id: '0',
-        text: recipient === 'self' 
-          ? `Emergency Type: ${type}\nFor: Myself (${fullName || 'Unknown'}, Age: ${calculatedAge || 'Unknown'})`
-          : `Emergency Type: ${type}\nFor: Someone Else`,
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      
+      // Load existing messages if any
       if (docRef.id) {
         const messagesRef = collection(db, `emergencies/${docRef.id}/messages`);
         const q = query(messagesRef, orderBy('timestamp', 'asc'));
@@ -166,6 +158,16 @@ export default function EmergencyChat() {
             timestamp: data.timestamp?.toDate() || new Date(),
           };
         });
+
+        // Set initial message with user info
+        const initialMessage: Message = {
+          id: '0',
+          text: recipient === 'self' 
+            ? `Emergency Type: ${type}\nFor: Myself (${fullName || 'Unknown'}, Age: ${calculatedAge || 'Unknown'})`
+            : `Emergency Type: ${type}\nFor: Someone Else`,
+          sender: 'ai',
+          timestamp: new Date()
+        };
 
         setMessages([initialMessage, ...loadedMessages]);
       }
@@ -336,6 +338,64 @@ Guidelines:
   const scrollToBottom = () => {
     flatListRef.current?.scrollToEnd({ animated: true });
   };
+
+  const loadMessages = async () => {
+    if (!chatId) return;
+
+    try {
+      const db = getFirestore();
+      
+      // First fetch emergency data to get user info
+      const emergencyDoc = await getDoc(doc(db, 'emergencies', chatId));
+      const data = emergencyDoc.data();
+      if (data) {
+        setEmergencyData(data as EmergencyData);  // Type assertion here
+      }
+
+      // Create initial message with user info from emergency data
+      const initialMessage: Message = {
+        id: '0',
+        text: data?.recipient === 'self' 
+          ? `Emergency Type: ${data?.type || 'Unknown'}\nFor: Myself (${data?.name || 'Unknown'}, Age: ${data?.age || 'Unknown'})`
+          : `Emergency Type: ${data?.type || 'Unknown'}\nFor: Someone Else`,
+        sender: 'ai',
+        timestamp: new Date()
+      };
+
+      // Then fetch messages
+      const messagesRef = collection(db, `emergencies/${chatId}/messages`);
+      const q = query(messagesRef, orderBy('timestamp', 'asc'));
+      const querySnapshot = await getDocs(q);
+      
+      const loadedMessages: Message[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          text: data.content,
+          sender: data.role === 'user' ? 'user' : 'ai',
+          timestamp: data.timestamp?.toDate() || new Date(),
+        };
+      });
+
+      // Set messages with initial message
+      setMessages([initialMessage, ...loadedMessages]);
+      
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+    } catch (error) {
+      console.error("Error loading messages:", error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (chatId) {
+        loadMessages();
+      }
+    }, [chatId])
+  );
 
   return (
     <KeyboardAvoidingView 

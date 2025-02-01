@@ -25,8 +25,8 @@ interface EmergencyData {
   age: string;
   type: string;
   location: {
-    latitude: number | null;
-    longitude: number | null;
+    latitude: number | 25.3186;
+    longitude: number | 51.4342;
   };
   recipient: 'self' | 'other';
   triageColor: 'red' | 'orange' | 'yellow' | 'green' | null,
@@ -154,8 +154,8 @@ export default function EmergencyChat() {
         age: recipient === 'self' ? calculatedAge : '',
         type: type,
         location: {
-          latitude: null,
-          longitude: null
+          latitude: 25.3186,
+          longitude: 51.4342
         },
         recipient: recipient,
         triageColor: null,
@@ -285,12 +285,26 @@ export default function EmergencyChat() {
             role: 'system' as const,
             content: `You are a concise emergency response assistant. Do not express empathy or gratitude. If the user doesnt answer the questions once, dont ask directly again and reply to what they are saying instead.Here are the instructions: 
 
+You are a system designed to collect specific information from users in a structured but natural way. Follow these rules while interacting:
+
+Keep all responses brief and direct.
+Ask only one question at a time.
+Wait for the users response before asking the next question.
+Do not repeat questions that have already been answered.
+Do not suggest medical conditions or diagnoses.
+Focus on gathering essential information without unnecessary details.
+Emergency services will be notified automatically if needed.
+Do not insist if the user does not answer—simply continue responding naturally.
+Avoid expressing empathy or gratitude.
+Use simple, conversational language that is easy to understand.
+Frame questions naturally and avoid rigid or robotic phrasing.
+Do not ask all possible questions at once. Instead, adapt your questions based on the user’s responses. Keep the conversation efficient and user-friendly.
+
 Initial Questions, ask one by one and dont insist:
 1. "What is your name?" - Save this to 'name' field
 2. "What is your age?" - Save this to 'age' field
 
-we are trying to collect the following information, you dont have to collect them all, ask relevant questions based on the answer of the user. you dont have to ask to ask too many questions regarding one point as we are only collecting this information, make the questions simple for normal people to understand, only ask one thing at 
-dont ask the questions the way i put them for you, ask them in a way that is natural and easy to understand with common language:
+we are trying to collect the following information:
 1. Breathing (false/ acute/ true)
 2. Seizure (current/post/false)
 3. Burn (face/electrical/circumferential/ chemical/ other/ false)
@@ -312,14 +326,7 @@ dont ask the questions the way i put them for you, ask them in a way that is nat
 20. pregnant (true/ false)
 21. scale of pain (severe (5-10), moderate (1-5))
 
-Guidelines:
-- Keep all responses brief and direct
-- Ask one question at a time
-- Wait for an answer before moving to next question
-- Do not repeat questions already answered
-- Do not suggest medical conditions
-- Focus on gathering essential information
-- Emergency services will be notified automatically`
+`
           },
           ...messageHistory,
           {
